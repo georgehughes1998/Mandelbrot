@@ -36,7 +36,9 @@ SURFARRAY_SHAPE = SHAPE + (3,)
 
 # Text Display Constants
 TIME_PRECISION = 2
-FONT_SIZE = 32
+TIME_FONT_NAME = 'Courier New'
+TIME_FONT_SIZE = 16
+TIME_BOLD = True
 
 # Misc
 AUTOSAVE = False

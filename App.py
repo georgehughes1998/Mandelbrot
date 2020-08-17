@@ -23,7 +23,8 @@ if __name__ == '__main__':
     surface = pygame.display.set_mode(SCREEN_RESOLUTION)
     fps_clock = pygame.time.Clock()
 
-    time_font = pygame.freetype.SysFont(pygame.freetype.get_default_font(), FONT_SIZE)
+    # Font
+    time_font = pygame.freetype.SysFont(TIME_FONT_NAME, TIME_FONT_SIZE, bold=TIME_BOLD)
 
     # Create sub process for calculating mandelbrot set
     calc_parent_conn, calc_child_conn = mp.Pipe()
@@ -55,7 +56,9 @@ if __name__ == '__main__':
         surface.blit(surf_array_surface_trans, (0, 0))
 
         # Draw time
-        draw_text(surface, f"{total_time}s", time_font, (16, 16), GREEN)
+        time_text = f"{total_time}s"
+        time_text += ['[Rendering]', '[Complete]'][recv_time]
+        draw_text(surface, time_text, time_font, (16, 16), GREEN)
 
         # Pygame events
         for event in pygame.event.get():
