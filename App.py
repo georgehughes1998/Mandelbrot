@@ -5,22 +5,27 @@ if __name__ == '__main__':
     from pygame.locals import *
     import pygame.freetype
 
-    BLACK = pygame.Color(0,0,0)
-    WHITE = pygame.Color(255,255,255)
-    GREY = pygame.Color(145,145,145)
-    RED = pygame.Color(255,0,0)
-    GREEN = pygame.Color(0,128,0)
-    BLUE = pygame.Color(0,0,128)
+    BLACK = pygame.Color(0, 0, 0)
+    WHITE = pygame.Color(255, 255, 255)
+    GREY = pygame.Color(145, 145, 145)
+    RED = pygame.Color(255, 0, 0)
+    GREEN = pygame.Color(0, 128, 0)
+    BLUE = pygame.Color(0, 0, 128)
 
     # Function to draw text
-    def draw_text(surface, text, font, pos, color):
-        text_surface, text_rect = font.render(text, fgcolor=color)
-        text_rect.topleft = pos
+    def draw_text(surface, text_string, text_font, text_pos, text_colour):
+        text_surface, text_rect = text_font.render(text_string, fgcolor=text_colour)
+        text_rect.topleft = text_pos
         surface.blit(text_surface, text_rect)
+
+    def save_mandelbrot_surface(save_surface):
+        asctime = time.asctime().replace(':', '')
+        pygame.image.save(save_surface, f"capture/mandelbrot_image {asctime}.png")
+
 
     # Initialise pygame
     pygame.init()
-    surface = pygame.display.set_mode(SCREEN_RESOLUTION)
+    s = pygame.display.set_mode(SCREEN_RESOLUTION)
     fps_clock = pygame.time.Clock()
 
     # Font
@@ -48,29 +53,27 @@ if __name__ == '__main__':
     # Main loop
     while do_loop:
         # Fill background
-        surface.fill(GREY)
+        s.fill(GREY)
 
         # Draw surf array
         surf_array_surface = pygame.surfarray.make_surface(surf_array)
         surf_array_surface_trans = pygame.transform.scale(surf_array_surface, SCREEN_RESOLUTION)
-        surface.blit(surf_array_surface_trans, (0, 0))
+        s.blit(surf_array_surface_trans, (0, 0))
 
         # Draw time
         time_text = f"{total_time}s"
         time_text += ['[Rendering]', '[Complete]'][recv_time]
-        draw_text(surface, time_text, time_font, (16, 16), GREEN)
+        draw_text(s, time_text, time_font, (16, 16), GREEN)
 
         # Pygame events
         for event in pygame.event.get():
             if event.type == pygame.QUIT: # The user closed the window!
                 if not is_saved and AUTOSAVE:
-                    t = time.asctime().replace(':', '')
-                    pygame.image.save(surf_array_surface, f"capture/mandelbrot_image {t}.png")
+                    save_mandelbrot_surface(surf_array_surface)
                 do_loop = False
             if event.type == KEYDOWN:
                 if event.key == K_SPACE:
-                    t = time.asctime().replace(':', '')
-                    pygame.image.save(surf_array_surface, f"capture/mandelbrot_image {t}.png")
+                    save_mandelbrot_surface(surf_array_surface)
                     is_saved = True
 
         # Redraw screen
