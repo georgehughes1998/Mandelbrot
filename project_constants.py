@@ -8,7 +8,7 @@ CHUNK_SIZE = 192
 NUM_PROC = 4
 
 # Mandelbrot Constants
-PRECISION = 0.01
+PRECISION = 0.05
 PRECISION_ROUND = min([(n if round(PRECISION, n) == PRECISION else 10) for n in range(8)])
 
 XOFFSET = 0

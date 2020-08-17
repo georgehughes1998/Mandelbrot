@@ -63,6 +63,7 @@ if __name__ == '__main__':
         # Draw time
         time_text = f"{total_time}s"
         time_text += ['[Rendering]', '[Complete]'][recv_time]
+        time_text += ['','[Saved]'][is_saved]
         draw_text(s, time_text, time_font, (16, 16), GREEN)
 
         # Pygame events
