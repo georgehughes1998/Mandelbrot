@@ -4,6 +4,7 @@ import math, random, sys, itertools, time
 
 from project_constants import *
 
+
 # Iterative Function
 def znplus1(c, z=0, i=DEPTH):
     if i <= 0 or z > 2:
@@ -114,12 +115,8 @@ if __name__ == '__main__':
                 total_time = calc_parent_conn.recv()
                 recv_time = True
 
-
     # Merge subprocess
     p.join(timeout=1)
     p.terminate()
 
-    # surf_p.join(timeout=0.5)
-    # surf_p.terminate()
-
-    pygame.quit() # Close the window
+    pygame.quit()
