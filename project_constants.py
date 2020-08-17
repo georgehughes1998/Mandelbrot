@@ -27,7 +27,7 @@ YRANGE_INDEX = range(len(YRANGE))
 XY_INDEX_RANGE = list(itertools.product(XRANGE_INDEX, YRANGE_INDEX))
 SHAPE = len(XRANGE), len(YRANGE)
 
-Z_POWER = 10
+Z_POWER = 2
 
 # Surface Array File Constants
 SURFARRAY_FILENAME = "surf_array.dat"
