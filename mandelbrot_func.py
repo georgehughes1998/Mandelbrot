@@ -26,7 +26,7 @@ def set_mandelbrot(x, y):
 
 
 # Calculate members of the mandelbrot set and write to file
-def calculate_mandelbrot(pipe):
+def calculate_mandelbrot(pipe, progress_value):
     surf_array = np.memmap(SURFARRAY_FILENAME, dtype=SURFARRAY_DTYPE, mode='w+', shape=SURFARRAY_SHAPE)
 
     # Inform file is created
@@ -34,7 +34,7 @@ def calculate_mandelbrot(pipe):
 
     start_time = time.time()
     with mp.Pool(processes=NUM_PROC) as pool:
-        pool.starmap(set_mandelbrot, XY_INDEX_RANGE, chunksize=CHUNK_SIZE)
+        res = pool.starmap(set_mandelbrot, XY_INDEX_RANGE, chunksize=CHUNK_SIZE)
 
     end_time = time.time()
     total_time = round(end_time - start_time, TIME_PRECISION)

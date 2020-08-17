@@ -33,7 +33,8 @@ if __name__ == '__main__':
 
     # Create sub process for calculating mandelbrot set
     calc_parent_conn, calc_child_conn = mp.Pipe()
-    p = mp.Process(target=calculate_mandelbrot, args=(calc_child_conn,))
+    progress_value = mp.Value('d', 0.0)
+    p = mp.Process(target=calculate_mandelbrot, args=(calc_child_conn,progress_value))
     p.start()
 
     # Ensure mandelbrot file is created
@@ -65,6 +66,8 @@ if __name__ == '__main__':
         time_text += ['[Rendering]', '[Complete]'][recv_time]
         time_text += ['[Unsaved]', '[Saved]'][is_saved]
         draw_text(s, time_text, time_font, (16, 16), GREEN)
+
+        draw_text(s, f"{progress_value.value}%", time_font, (16, 32), GREEN)
 
         # Pygame events
         for event in pygame.event.get():
