@@ -12,17 +12,20 @@ if __name__ == '__main__':
     GREEN = pygame.Color(0,128,0)
     BLUE = pygame.Color(0,0,128)
 
-    def draw_text(surface, text, pos, color):
+    # Function to draw text
+    def draw_text(surface, text, font, pos, color):
         text_surface, text_rect = font.render(text, fgcolor=color)
         text_rect.topleft = pos
         surface.blit(text_surface, text_rect)
 
-
+    # Initialise pygame
     pygame.init()
     surface = pygame.display.set_mode(SCREEN_RESOLUTION)
     fps_clock = pygame.time.Clock()
-    font = pygame.freetype.SysFont(pygame.freetype.get_default_font(), FONT_SIZE)
 
+    time_font = pygame.freetype.SysFont(pygame.freetype.get_default_font(), FONT_SIZE)
+
+    # Create sub process for calculating mandelbrot set
     calc_parent_conn, calc_child_conn = mp.Pipe()
     p = mp.Process(target=calculate_mandelbrot, args=(calc_child_conn,))
     p.start()
@@ -30,43 +33,53 @@ if __name__ == '__main__':
     # Ensure mandelbrot file is created
     calc_parent_conn.recv()
 
+    # Map surface array file
     surf_array = np.memmap(SURFARRAY_FILENAME, dtype=SURFARRAY_DTYPE, mode='r+', shape=SURFARRAY_SHAPE)
 
-    running = True
-    saved = False
-    x = 0
+    # Initialise variables for main loop
+    do_loop = True
+    is_saved = False
 
     total_time = 0
     recv_time = False
     start_time = time.time()
 
-    while running:
-        # Background
+    # Main loop
+    while do_loop:
+        # Fill background
         surface.fill(GREY)
 
+        # Draw surf array
         surf_array_surface = pygame.surfarray.make_surface(surf_array)
         surf_array_surface_trans = pygame.transform.scale(surf_array_surface, SCREEN_RESOLUTION)
         surface.blit(surf_array_surface_trans, (0, 0))
 
-        draw_text(surface, f"{total_time}s", (16, 16), GREEN)
+        # Draw time
+        draw_text(surface, f"{total_time}s", time_font, (16, 16), GREEN)
 
+        # Pygame events
         for event in pygame.event.get():
             if event.type == pygame.QUIT: # The user closed the window!
-                if not saved and AUTOSAVE:
+                if not is_saved and AUTOSAVE:
                     t = time.asctime().replace(':', '')
                     pygame.image.save(surf_array_surface, f"capture/mandelbrot_image {t}.png")
-                running = False # Stop running
+                do_loop = False
             if event.type == KEYDOWN:
                 if event.key == K_SPACE:
                     t = time.asctime().replace(':', '')
                     pygame.image.save(surf_array_surface, f"capture/mandelbrot_image {t}.png")
-                    saved = True
+                    is_saved = True
+
+        # Redraw screen
         pygame.display.update()
         fps_clock.tick(30)
 
+        # Display time
         if not recv_time:
+            # Current elapsed time
             total_time = round(time.time() - start_time, TIME_PRECISION)
             if calc_parent_conn.poll():
+                # Receive time from subprocess
                 total_time = calc_parent_conn.recv()
                 recv_time = True
 
