@@ -18,8 +18,8 @@
     {{
         int gid = get_global_id(0);
 
-        int y_int = gid%width;
-        int x_int = gid/height;
+        int x_int = (gid + 1)/height;
+        int y_int = (gid + 1)%height;
 
         float x_unscaled = (xmax - xmin)*(x_int/(float)width) + xmin;
         float y_unscaled = (ymax - ymin)*(y_int/(float)height) + ymin;
