@@ -69,7 +69,7 @@ def calculate_mandelbrot_opencl(queue, program, out_np, out_buf, scalar_args):
 
 
 def _run_test():
-    SHAPE = WIDTH, HEIGHT = 1024, 1024
+    SHAPE = WIDTH, HEIGHT = 1323, 761
     XMIN, XMAX = -2, 2
     YMIN, YMAX = -2, 2
 
@@ -81,7 +81,7 @@ def _run_test():
 
     context, queue, _ = create_cl_context_and_queue(use_gpu=True)
     out_np, out_buf = create_out_array_and_buffer(context, SHAPE)
-    program = create_and_build_program(context, "CL/kernel.c")
+    program = create_and_build_program(context, "kernel.c")
 
     scalar_args = (np.float32(XMAX),
                    np.float32(XMIN),
