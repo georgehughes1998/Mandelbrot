@@ -1,4 +1,4 @@
-from mandelbrot_func import *
+from MP.mandelbrot_func import *
 
 
 if __name__ == '__main__':

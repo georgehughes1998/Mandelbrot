@@ -1,7 +1,7 @@
 import multiprocessing as mp
 import time
 
-from project_constants import *
+from MP.project_constants import *
 
 # Iterative Function
 def znplus1(c, z=0, i=DEPTH):

@@ -8,7 +8,7 @@ CHUNK_SIZE = 192
 NUM_PROC = 4
 
 # Mandelbrot Constants
-PRECISION = 0.0005
+PRECISION = 0.05
 PRECISION_ROUND = min([(n if round(PRECISION, n) == PRECISION else 10) for n in range(8)])
 
 XOFFSET = 0
@@ -30,7 +30,7 @@ SHAPE = len(XRANGE), len(YRANGE)
 Z_POWER = 2
 
 # Surface Array File Constants
-SURFARRAY_FILENAME = "surf_array.dat"
+SURFARRAY_FILENAME = "../surf_array.dat"
 SURFARRAY_DTYPE = 'int'
 SURFARRAY_SHAPE = SHAPE + (3,)
 SURFARRAY_LEN = len(XY_INDEX_RANGE) * 3
