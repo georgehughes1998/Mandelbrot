@@ -1,7 +1,7 @@
 #include <pyopencl-complex.h>
 
     kernel void znplus1(
-    global float *out_buf,
+    global long *out_buf,
             float xmax,
             float xmin,
             float ymax,
