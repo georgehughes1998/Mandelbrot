@@ -1,3 +1,5 @@
+import time, os
+
 import numpy as np
 
 from pygame.locals import *
@@ -22,7 +24,7 @@ CUTOFF = 2
 ZOOM_FACTOR = 1.3
 PAN_STEP_DIVIDER = 5
 USE_MOUSE = False
-FONT_SIZE = 12
+FONT_SIZE = 20
 DO_FULLSCREEN = True
 FLOAT_CUTOFF = 0.000001
 
@@ -122,21 +124,25 @@ def get_scalar_args(do_capture=False):
 
 
 def draw_text(surface, text, font, pos, color):
-    text_surface, text_rect = font.render(text, fgcolor=color)
-    text_rect.topleft = pos
-    surface.blit(text_surface, text_rect)
+    i = 0
+    for textline in text.splitlines():
+        text_surface, text_rect = font.render(textline, fgcolor=color)
+        x, y = pos
+        text_rect.topleft = x, y + i*FONT_SIZE
+        pygame.draw.rect(surface, BLACK, text_rect)
+        surface.blit(text_surface, text_rect)
+        i += 1
 
-    return(text_rect)
+    return()
 
 
 set_device(0)
 
 pygame.init()
+os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (128, 128)
 
-# pygame.display.Info()["current_h"]
-# pygame.display.Info()["current_w"]
 display_info = pygame.display.Info()
-max_w, max_h = (display_info.current_w, display_info.current_h)
+max_w, max_h = 1024, 720#(display_info.current_w, display_info.current_h)
 
 if DO_FULLSCREEN:
     screen_width, screen_height = screen_res = (max_w, max_h)
@@ -161,13 +167,25 @@ if joysticks:
 
 step = 0
 do_save = False
-text_rect = (16,16,128,32)
+do_update = True
+do_display_text = True
+last_time_taken = 0
 
 running = True
 while running:
 
-    scalar_args = get_scalar_args()
-    calculate_mandelbrot_opencl(queue, program, out_np, out_buf, scalar_args, scalar_arg_types)
+    # Only recalculate when view is changed
+    if do_update:
+        # Get the arguments in numpy format
+        scalar_args = get_scalar_args()
+
+        # Time it
+        start_time = time.time()
+        calculate_mandelbrot_opencl(queue, program, out_np, out_buf, scalar_args, scalar_arg_types)
+        last_time_taken = round(time.time() - start_time, 3)
+
+        # Don't redraw
+        do_update = False
 
     step = (step + 1)
 
@@ -186,45 +204,59 @@ while running:
             running = False
 
         if event.type == VIDEORESIZE:
+            # Resize the display and scalar parameters
             SHAPE = WIDTH, HEIGHT = event.size
             print(f"Resizing to {SHAPE}")
-            screen_res = SHAPE
+
+            # Need new buffer for new size
             out_np, out_buf = create_out_array_and_buffer(context, SHAPE, dtype=np.int64)
 
+            # Decide how to set the display
+            screen_width, screen_height = screen_res = SHAPE
             if DO_FULLSCREEN:
-                surface = pygame.display.set_mode(screen_res, FULLSCREEN)
+                pygame.display.update()
+                # surface = pygame.display.set_mode(screen_res, FULLSCREEN)
             else:
                 surface = pygame.display.set_mode(screen_res, RESIZABLE)
+                pygame.display.update()
+
+            # Recalculate
+            do_update = True
 
         elif event.type == KEYDOWN:
             if event.key == K_ESCAPE:
                 running = False
-            elif event.key == K_r:
-                step = 0
             elif event.key == K_SPACE:
                 do_save = True
 
             if event.key == K_UP:
                 YOFFSET -= YSCALE / PAN_STEP_DIVIDER
+                do_update = True
             elif event.key == K_DOWN:
                 YOFFSET += YSCALE / PAN_STEP_DIVIDER
+                do_update = True
             elif event.key == K_LEFT:
                 XOFFSET -= XSCALE / PAN_STEP_DIVIDER
+                do_update = True
             elif event.key == K_RIGHT:
                 XOFFSET += XSCALE / PAN_STEP_DIVIDER
+                do_update = True
 
         elif event.type == MOUSEMOTION:
             if USE_MOUSE:
                 mousex, mousey = pygame.mouse.get_pos()
                 XOFFSET = (XMAX - XMIN) * (mousex / screen_width) + XMIN;
                 YOFFSET = (YMAX - YMIN) * (mousey / screen_height) + YMIN;
+                do_update = True
         elif event.type == MOUSEBUTTONDOWN:
             if event.button == 4:
                 XSCALE /= ZOOM_FACTOR
                 YSCALE /= ZOOM_FACTOR
+                do_update = True
             elif event.button == 5:
                 XSCALE *= ZOOM_FACTOR
                 YSCALE *= ZOOM_FACTOR
+                do_update = True
             elif event.button == 2:
                 USE_MOUSE = not USE_MOUSE
 
@@ -234,17 +266,24 @@ while running:
             elif event.button == 8:
                 XSCALE, YSCALE = 1, 1
                 set_device(0)
+                do_update = True
             elif event.button == 9:
                 set_device(not device_using)
+                do_update = True
             elif event.button == 6:
                 running = False
             elif event.button == 7:
                 DO_FULLSCREEN = not DO_FULLSCREEN
-
                 if DO_FULLSCREEN:
-                    surface = pygame.display.set_mode((max_w, max_h), FULLSCREEN)
+                    screen_width, screen_height = screen_res = (max_w, max_h)
+                    surface = pygame.display.set_mode(screen_res, FULLSCREEN)
                 else:
-                    surface = pygame.display.set_mode((max_w//4, max_h//4), RESIZABLE)
+                    screen_width, screen_height = screen_res = (max_w//4, max_h//4)
+                    surface = pygame.display.set_mode(screen_res, RESIZABLE)
+                do_update = True
+            elif event.button == 3:
+                do_display_text = not do_display_text
+
             else:
                 print(f"Unmapped button {event.button}")
 
@@ -252,47 +291,54 @@ while running:
             x_pan, y_pan = event.value
             XOFFSET += x_pan * XSCALE / PAN_STEP_DIVIDER
             YOFFSET -= y_pan * YSCALE / PAN_STEP_DIVIDER
+            do_update = True
 
     # Receive any movement from the joystick
     if joysticks:
+        # Zoom with triggers
         zoom_amount = round(joystick.get_axis(2), 16)
-        old_scale = XSCALE
+        if zoom_amount > 0.2 or zoom_amount < -0.2:
+            old_scale = XSCALE
 
-        XSCALE *= 1 + (zoom_amount) / 8
-        YSCALE *= 1 + (zoom_amount) / 8
+            XSCALE *= 1 + (zoom_amount) / 8
+            YSCALE *= 1 + (zoom_amount) / 8
+            do_update = True
 
-        if XSCALE < FLOAT_CUTOFF and old_scale > FLOAT_CUTOFF:
-            set_device(1)
-        elif XSCALE > FLOAT_CUTOFF and old_scale < FLOAT_CUTOFF:
-            set_device(0)
+            if XSCALE < FLOAT_CUTOFF and old_scale > FLOAT_CUTOFF:
+                set_device(1)
+            elif XSCALE > FLOAT_CUTOFF and old_scale < FLOAT_CUTOFF:
+                set_device(0)
 
         xmove_amount = round(joystick.get_axis(0), 16)
         if xmove_amount > 0.2 or xmove_amount < -0.2:
             XOFFSET += xmove_amount * XSCALE / PAN_STEP_DIVIDER
+            do_update = True
 
         ymove_amount = round(joystick.get_axis(1), 16)
         if ymove_amount > 0.2 or ymove_amount < -0.2:
             YOFFSET += ymove_amount * YSCALE / PAN_STEP_DIVIDER
-
-        # zchange_amount = round(joystick.get_axis(3), 4)
-        # if zchange_amount > 0.2 or zchange_amount < -0.2:
-        #     Z_POWER += zchange_amount/100
+            do_update = True
 
         depth_change = round(joystick.get_axis(4), 4)
         if depth_change > 0.2 or depth_change < -0.2:
             DEPTH += round(depth_change)
+            do_update = True
 
     # Drawing to screen
     surface.fill(GREY)
     out_surface = pygame.surfarray.make_surface(out_np)
-    # out_surface_scale = pygame.transform.scale(out_surface, screen_res)
-    surface.blit(out_surface, (0, 0))
+    out_surface_scale = pygame.transform.scale(out_surface, screen_res)
+    surface.blit(out_surface_scale, (0, 0))
 
-    # locktext = ["[Mouse Locked]", ""][USE_MOUSE]
-    save_text = ["", "[Saving...]"][do_save]
-    pos_text = f"x {round(XOFFSET, 5)}, y {round(YOFFSET, 5)}, zoom {round(1 / XSCALE)}"
-    pygame.draw.rect(surface, BLACK, text_rect)
-    text_rect = draw_text(surface, f"{save_text} Rendering on: {device.name} | Frame {step} | {pos_text} | Z^{round(Z_POWER, 2)} | Depth {DEPTH}", font, pygame.mouse.get_pos(), GREEN)
+    if do_display_text:
+        save_text = ["", "[Saving...]"][do_save]
+        render_text = ["", "[Rendering...]"][do_update]
+        pos_text = f"x {round(XOFFSET, 5)}, y {round(YOFFSET, 5)}, zoom {round(1 / XSCALE)}"
+        text_to_draw = f"""{save_text}{render_text}Rendering on {device.name}
+Rendered in {last_time_taken}s
+{pos_text}
+Depth {DEPTH}"""
+        draw_text(surface, text_to_draw, font, (128, 64), GREEN)
 
     pygame.display.update()
     fps_clock.tick(60)
